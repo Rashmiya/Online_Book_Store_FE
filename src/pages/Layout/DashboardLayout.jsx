@@ -1,22 +1,22 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import MainLogo from "../../assets/images/svg/MainLayout/MainLogo";
-import { ConfigProvider, Input, Popover, Tooltip, Typography } from "antd";
-import HomeIcon from "../../assets/images/svg/MainLayout/HomeIcon";
-import HomeAndNotificationContext from "../../context/HomeAndNotificationContext";
-import DashboardDropdownIcon from "../../assets/images/svg/MainLayout/DashboardDropdownIcon";
-import CartIcon from "../../assets/images/svg/MainLayout/CartIcon";
-import HelpIconNew from "../../assets/images/svg/MainLayout/HelpIconNew";
-import UserColorProfile from "../../components/ColorProfile/UserColorProfile";
-import { AuthContext } from "../../context/AuthContext";
-import SideDrawer from "../../components/side_drawers/SideDrawer";
-import CartBody from "../../components/CartBody/CartBody";
-import { NotificationContext } from "../../context/NotificationContext";
-import SignInServices from "../../services/SignInServices";
-import BookContext from "../../context/BookContext";
-import LoadingAnim from "../../components/loader/LoadingAnim";
-import DashBoardImageOne from "../../assets/images/svg/dashboard/DashBoardImageOne";
-import BookService from "../../services/BookService";
+import React, { useContext, useEffect, useState } from 'react';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
+import MainLogo from '../../assets/images/svg/MainLayout/MainLogo';
+import { ConfigProvider, Input, Popover, Tooltip, Typography } from 'antd';
+import HomeIcon from '../../assets/images/svg/MainLayout/HomeIcon';
+import HomeAndNotificationContext from '../../context/HomeAndNotificationContext';
+import DashboardDropdownIcon from '../../assets/images/svg/MainLayout/DashboardDropdownIcon';
+import CartIcon from '../../assets/images/svg/MainLayout/CartIcon';
+import HelpIconNew from '../../assets/images/svg/MainLayout/HelpIconNew';
+import UserColorProfile from '../../components/ColorProfile/UserColorProfile';
+import { AuthContext } from '../../context/AuthContext';
+import SideDrawer from '../../components/side_drawers/SideDrawer';
+import CartBody from '../../components/CartBody/CartBody';
+import { NotificationContext } from '../../context/NotificationContext';
+import SignInServices from '../../services/SignInServices';
+import BookContext from '../../context/BookContext';
+import LoadingAnim from '../../components/loader/LoadingAnim';
+import DashBoardImageOne from '../../assets/images/svg/dashboard/DashBoardImageOne';
+import BookService from '../../services/BookService';
 const { Text } = Typography;
 const DashboardLayout = () => {
   const {
@@ -28,29 +28,29 @@ const DashboardLayout = () => {
   } = useContext(HomeAndNotificationContext);
   const { block, user } = useContext(AuthContext);
   const { openNotification, handleError } = useContext(NotificationContext);
-  const [popoverVisible, setPopoverVisible] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [logoutState, setLogoutState] = useState(false);
-  const { filters, updateFilters, books, setBooks, bookData, setBookData } =
-    useContext(BookContext);
+  // const [popoverVisible, setPopoverVisible] = useState(false);
+  // const [searchValue, setSearchValue] = useState("");
+  // const [logoutState, setLogoutState] = useState(false);
+  // const { filters, updateFilters, books, setBooks, bookData, setBookData } =
+  //   useContext(BookContext);
 
   const navigateTo = useNavigate();
   const { logOutUser } = SignInServices();
 
-  const handleIconClick = (icon) => {
+  const handleIconClick = icon => {
     setSelectedIcon(icon);
   };
 
   useEffect(() => {
     switch (selectedIcon) {
-      case "home":
-        navigateTo("/");
+      case 'home':
+        navigateTo('/');
         break;
-      case "all-books":
-        navigateTo("all-books");
+      case 'all-books':
+        navigateTo('all-books');
         break;
-      case "help":
-        navigateTo("help");
+      case 'help':
+        navigateTo('help');
         break;
       default:
         break;
@@ -61,7 +61,7 @@ const DashboardLayout = () => {
   //   setOpenCartDrawer(true);
   // }, [openCartDrawerGlobal]);
 
-  const handleSearch = (value) => {
+  const handleSearch = value => {
     console.log(value);
     //  if (value) {
     //    setSearchValue(value);
@@ -75,14 +75,14 @@ const DashboardLayout = () => {
     setLogoutState(true);
     const response = await logOutUser();
     if (response) {
-      if (response.responseType === "success") {
-        openNotification("success", response?.output?.message);
+      if (response.responseType === 'success') {
+        openNotification('success', response?.output?.message);
 
         // Define keys you want to keep (e.g., credentials for "Remember Me")
         const keysToKeep = [
-          "rememberedEmail",
-          "rememberedPassword",
-          "rememberMe",
+          'rememberedEmail',
+          'rememberedPassword',
+          'rememberMe',
         ];
         // Temporarily store the values for the keys to keep
         const valuesToKeep = keysToKeep.reduce((acc, key) => {
@@ -92,20 +92,20 @@ const DashboardLayout = () => {
         // Clear all items in localStorage
         localStorage.clear();
         // Restore the "Remember Me" values back to localStorage
-        keysToKeep.forEach((key) => {
+        keysToKeep.forEach(key => {
           if (valuesToKeep[key] !== null) {
             localStorage.setItem(key, valuesToKeep[key]);
           }
         });
         //window.location.replace("/onboarding/sign-in");
         window.location.reload();
-      } else if (response.responseType === "fail") {
-        openNotification("error", response?.output?.message);
-      } else if (response.responseType === "error") {
+      } else if (response.responseType === 'fail') {
+        openNotification('error', response?.output?.message);
+      } else if (response.responseType === 'error') {
         handleError(response?.output);
       }
     } else {
-      openNotification("error", "Something went wrong");
+      openNotification('error', 'Something went wrong');
     }
   };
 
@@ -141,11 +141,11 @@ const DashboardLayout = () => {
               <Link
                 className="cursor-pointer"
                 to="/"
-                onClick={() => handleIconClick("home")}
+                onClick={() => handleIconClick('home')}
               >
                 <HomeIcon
                   className="h-6 w-6 sm:h-8 sm:w-8"
-                  color={selectedIcon === "home" ? "#0d7cff" : "#939292"}
+                  color={selectedIcon === 'home' ? '#0d7cff' : '#939292'}
                 />
               </Link>
             </Tooltip>
@@ -155,12 +155,12 @@ const DashboardLayout = () => {
                 className="cursor-pointer"
                 onClick={async () => {
                   //await navigateToDashboard();
-                  handleIconClick("all-books");
+                  handleIconClick('all-books');
                 }}
               >
                 <DashboardDropdownIcon
                   className="h-6 w-6 sm:h-8 sm:w-8"
-                  color={selectedIcon === "all-books" ? "#0d7cff" : "#939292"}
+                  color={selectedIcon === 'all-books' ? '#0d7cff' : '#939292'}
                 />
               </div>
             </Tooltip>
@@ -169,21 +169,21 @@ const DashboardLayout = () => {
               <Link
                 className="cursor-pointer"
                 to="/support"
-                onClick={() => handleIconClick("help")}
+                onClick={() => handleIconClick('help')}
               >
                 <HelpIconNew
                   className="h-6 w-6 sm:h-8 sm:w-8"
-                  color={selectedIcon === "help" ? "#0d7cff" : "#FFA234"}
+                  color={selectedIcon === 'help' ? '#0d7cff' : '#FFA234'}
                 />
               </Link>
             </Tooltip>
 
             <UserColorProfile
-              name={user?.username || "N Z"}
+              name={user?.username || 'N Z'}
               color={user?.profileColor}
               size="32px"
               textSize="14px"
-              onClick={() => handleIconClick("profile")}
+              onClick={() => handleIconClick('profile')}
             />
             {user !== null ? (
               <Text
@@ -195,7 +195,7 @@ const DashboardLayout = () => {
             ) : (
               <Text
                 onClick={() => {
-                  window.open("/onboarding/sign-up", "_blank");
+                  window.open('/onboarding/sign-up', '_blank');
                 }}
                 className="cursor-pointer text-xs text-blue-500 hover:underline"
               >
@@ -208,7 +208,7 @@ const DashboardLayout = () => {
         {/* outlet */}
         <div
           className="mt-[60px] w-full flex-1"
-          style={{ backgroundColor: "themeColor" }}
+          style={{ backgroundColor: 'themeColor' }}
         >
           <Outlet />
         </div>
@@ -217,8 +217,8 @@ const DashboardLayout = () => {
           <SideDrawer
             open={openCartDrawer}
             handleClose={() => setOpenCartDrawer(false)}
-            icon={<CartIcon color={"black"} />}
-            title={"Cart"}
+            icon={<CartIcon color={'black'} />}
+            title={'Cart'}
           >
             <CartBody />
           </SideDrawer>

@@ -1,45 +1,44 @@
-import React from "react";
-import useFetch from "../hooks/useFetch";
- 
+import React from 'react';
+import useFetch from '../hooks/useFetch';
 
 const OrderService = () => {
-  const { fetchAction, fetchActionForm } = useFetch();
+  const { fetchAction } = useFetch();
 
-  const handleResponse = (response) => {
+  const handleResponse = response => {
     if (response?.success) {
-      return { responseType: "success", output: response };
+      return { responseType: 'success', output: response };
     } else {
-      return { responseType: "fail", output: response };
+      return { responseType: 'fail', output: response };
     }
   };
 
   // Create a new order
-  const createOrder = async (data) => {
+  const createOrder = async data => {
     try {
       const response = await fetchAction({
-        query: "/order/create",
-        method: "post",
+        query: '/order/create',
+        method: 'post',
         body: data,
       });
       return handleResponse(response);
     } catch (error) {
-      return { responseType: "error", output: error };
+      return { responseType: 'error', output: error };
     }
   };
 
   // Get a single order by ID
-  const getOrderById = async (data) => {
+  const getOrderById = async data => {
     try {
       const response = await fetchAction({
-        query: "/order/find",
-        method: "get",
+        query: '/order/find',
+        method: 'get',
         params: {
           orderId: data?.orderId || 0,
         },
       });
       return handleResponse(response);
     } catch (error) {
-      return { responseType: "error", output: error };
+      return { responseType: 'error', output: error };
     }
   };
   return {

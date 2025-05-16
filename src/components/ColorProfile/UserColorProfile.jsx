@@ -22,7 +22,7 @@ const UserColorProfile = ({ color, name, size, textSize, onClick }) => {
         height: `${size}`,
       }}
       onClick={onClick}
-      className="flex p-1 rounded-full items-center justify-center page-subtitle bg-primary uppercase cursor-pointer"
+      className="page-subtitle flex cursor-pointer items-center justify-center rounded-full bg-primary p-1 uppercase"
     >
       {initials}
     </div>

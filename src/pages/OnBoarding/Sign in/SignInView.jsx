@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Typography, Form, Input, Checkbox, Button } from "antd";
+import { useContext, useEffect, useState } from "react";
+import { Typography, Form, Input, Checkbox } from "antd";
 import { AuthContext } from "../../../context/AuthContext";
 import { NotificationContext } from "../../../context/NotificationContext";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   getLocalStoragedata,
   setLocalStorageData,
@@ -14,21 +14,17 @@ import PlayStore from "../../../assets/images/svg/onBoarding/PlayStore";
 import CustomButton from "../../../components/buttons/CustomButton";
 import SignInServices from "../../../services/SignInServices";
 import { emailFieldValidation } from "../../../utils/validations/validation";
-import Cookies from "universal-cookie";
 const { Text, Link } = Typography;
 
 const SignInView = () => {
-  const { openNotification, handleError, token } =
-    useContext(NotificationContext);
-  const { setToken, setUser, user, setIsAuthChack } = useContext(AuthContext);
+  const { openNotification, handleError } = useContext(NotificationContext);
+  const { setUser, user, setIsAuthChack } = useContext(AuthContext);
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [rememberMe, setRememberMe] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { loginUser } = SignInServices();
-  const location = useLocation();
-  const cookies = new Cookies();
   const { id } = useParams();
   useEffect(() => {
     // const rememberMe = localStorage.getItem("rememberMe") === "true";
@@ -108,14 +104,28 @@ const SignInView = () => {
         }}
         layout="vertical"
       >
-        <div className="flex flex-row items-center gap-1 pb-1 capitalize">
-          <MailIcon />
-          <Text className="text-md font-medium">Email *</Text>
-        </div>
         <Form.Item
           name="email"
+          layout="vertical"
+          label={
+            <div className="flex flex-row items-center gap-1 pb-1 capitalize">
+              <MailIcon />
+              <Text className="text-md font-medium">Email</Text>
+            </div>
+          }
+          className="mb-3 text-start"
+          rules={[
+            {
+              required: true,
+              message: "Email is required!",
+            },
+            {
+              type: "email",
+              message: "Invalid Email!",
+            },
+          ]}
+          validateTrigger="onBlur"
           style={{ textAlign: "left" }}
-          rules={[{ validator: emailFieldValidation }]}
         >
           <Input
             size="large"
@@ -129,27 +139,67 @@ const SignInView = () => {
                 e.preventDefault();
               }
             }}
+            onPaste={(e) => {
+              const clipboardData = e.clipboardData || window.clipboardData;
+              const pastedText = clipboardData.getData("text");
+              if (!/^[A-Za-z.@0-9]*$/.test(pastedText)) {
+                e.preventDefault();
+              }
+            }}
           />
         </Form.Item>
 
-        <div className="flex flex-row items-center gap-1 pb-1 capitalize">
-          <Password />
-          <Text className="text-md font-medium">Password *</Text>
-        </div>
         <Form.Item
           name="password"
+          layout="vertical"
+          label={
+            <div className="flex flex-row items-center gap-1 pb-1 capitalize">
+              <Password />
+              <Text className="text-md font-medium">Password</Text>
+            </div>
+          }
           style={{ textAlign: "left" }}
           rules={[
-            {
-              required: true,
-              message: "Password is required!",
-            },
+            ({}) => ({
+              validator(_, value) {
+                if (!value) {
+                  return Promise.reject(new Error("Password is required!"));
+                }
+                if (value.length < 6) {
+                  return Promise.reject(
+                    new Error("Password must be at least 6 characters long!"),
+                  );
+                }
+                if (!/(?=.*[A-Z])(?=.*[0-9])/.test(value)) {
+                  return Promise.reject(
+                    new Error(
+                      "Password is invalid! Must contain at least one uppercase letter and one number.",
+                    ),
+                  );
+                }
+                return Promise.resolve();
+              },
+            }),
           ]}
         >
           <Input.Password
+            type="password"
+            placeholder="Set password"
             size="large"
-            placeholder="Enter password"
             maxLength={60}
+            minLength={6}
+            onKeyDown={(e) => {
+              const key = e.key;
+              if (/^[\s]*$/.test(key) && key !== "Backspace") {
+                e.preventDefault();
+              }
+            }}
+            onPaste={(e) => {
+              const pastedText = e.clipboardData.getData("text/plain");
+              if (/\s/.test(pastedText)) {
+                e.preventDefault();
+              }
+            }}
           />
         </Form.Item>
 

@@ -5,8 +5,7 @@ import FooterSection from "../../components/Footer/FooterSection";
 const { Title, Paragraph } = Typography;
 
 const Contact = () => {
-  const onFinish = (values) => {
-    console.log("Form submitted: ", values);
+  const onFinish = (values) => { 
     // You can handle form submission here (e.g., send to backend)
   };
   return (

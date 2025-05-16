@@ -1,12 +1,8 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Typography, Form, Input, Checkbox, Button } from "antd";
-import { AuthContext } from "../../../context/AuthContext";
+/* eslint-disable no-empty-pattern */
+import { useContext, useState } from "react";
+import { Typography, Form, Input } from "antd";
 import { NotificationContext } from "../../../context/NotificationContext";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  getLocalStoragedata,
-  setLocalStorageData,
-} from "../../helpers/StorageHelper";
+import { useNavigate, useParams } from "react-router-dom";
 import MailIcon from "../../../assets/images/svg/onBoarding/MailIcon";
 import Password from "../../../assets/images/svg/onBoarding/Password";
 import AppStore from "../../../assets/images/svg/onBoarding/AppStore";
@@ -17,16 +13,12 @@ import SignInServices from "../../../services/SignInServices";
 const { Text, Link } = Typography;
 
 const SignUpView = () => {
-  const { openNotification, handleError, token } =
-    useContext(NotificationContext);
-  const { setToken } = useContext(AuthContext);
+  const { openNotification, handleError } = useContext(NotificationContext);
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [rememberMe, setRememberMe] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { signUpUser } = SignInServices();
-  const location = useLocation();
   const { id } = useParams();
   const handleClick = () => {
     setLoading(true);
@@ -37,7 +29,7 @@ const SignUpView = () => {
     setUploading(true);
 
     const data = {
-      username: e?.username,
+      username: e?.username?.trim(),
       email: e?.email,
       password: e?.password,
     };
@@ -109,7 +101,7 @@ const SignUpView = () => {
             maxLength={60}
             onKeyDown={(e) => {
               const key = e.key;
-              if (/\s|\d/.test(key)) e.preventDefault();
+              if (/\d/.test(key)) e.preventDefault();
             }}
             onPaste={(e) => {
               e.preventDefault();
@@ -134,10 +126,15 @@ const SignUpView = () => {
           rules={[
             {
               required: true,
-              message: "Username is required!",
-              whitespace: true,
+              message: "Email is required!",
+            },
+            {
+              type: "email",
+              message: "Invalid Email!",
             },
           ]}
+          validateTrigger="onBlur"
+          style={{ textAlign: "left" }}
         >
           <Input
             size="large"
@@ -148,6 +145,13 @@ const SignUpView = () => {
             onKeyDown={(e) => {
               const key = e.key;
               if (!/^[A-Za-z+.@0-9]*$/.test(key) && key !== "Backspace") {
+                e.preventDefault();
+              }
+            }}
+            onPaste={(e) => {
+              const clipboardData = e.clipboardData || window.clipboardData;
+              const pastedText = clipboardData.getData("text");
+              if (!/^[A-Za-z.@0-9]*$/.test(pastedText)) {
                 e.preventDefault();
               }
             }}
@@ -165,16 +169,46 @@ const SignUpView = () => {
           }
           style={{ textAlign: "left" }}
           rules={[
-            {
-              required: true,
-              message: "Password is required!",
-            },
+            ({}) => ({
+              validator(_, value) {
+                if (!value) {
+                  return Promise.reject(new Error("Password is required!"));
+                }
+                if (value.length < 6) {
+                  return Promise.reject(
+                    new Error("Password must be at least 6 characters long!"),
+                  );
+                }
+                if (!/(?=.*[A-Z])(?=.*[0-9])/.test(value)) {
+                  return Promise.reject(
+                    new Error(
+                      "Password is invalid! Must contain at least one uppercase letter and one number.",
+                    ),
+                  );
+                }
+                return Promise.resolve();
+              },
+            }),
           ]}
         >
           <Input.Password
+            type="password"
+            placeholder="Set password"
             size="large"
-            placeholder="Enter password"
             maxLength={60}
+            minLength={6}
+            onKeyDown={(e) => {
+              const key = e.key;
+              if (/^[\s]*$/.test(key) && key !== "Backspace") {
+                e.preventDefault();
+              }
+            }}
+            onPaste={(e) => {
+              const pastedText = e.clipboardData.getData("text/plain");
+              if (/\s/.test(pastedText)) {
+                e.preventDefault();
+              }
+            }}
           />
         </Form.Item>
 

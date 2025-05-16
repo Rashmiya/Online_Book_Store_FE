@@ -5,23 +5,24 @@ import CustomButton from "../../components/buttons/CustomButton";
 import PhoneInputWithCountrySelect from "react-phone-number-input";
 import PhoneInput from "react-phone-input-2";
 import FooterSection from "../../components/Footer/FooterSection";
-
+import payHereBanner from "D:/Projects/Online Book Store/Online_book_store_FE/Online Book Store/src/assets/images/png/payhere_long_banner.png";
+import KokoIcon from "D:/Projects/Online Book Store/Online_book_store_FE/Online Book Store/src/assets/images/png/logo1.7ff549c0.png";
 import BackButtonIcon from "../../assets/images/common/BackButtonIcon";
-import payHereBanner from "../../assets/images/png/payhere_long_banner.png";
-import KokoIcon from "../../assets/images/png/logo1.7ff549c0.png";
-
 import { useNavigate } from "react-router-dom";
 import BookContext from "../../context/BookContext";
 import { setLocalStorageData } from "../helpers/StorageHelper";
 import OrderService from "../../services/OrderService";
 import { AuthContext } from "../../context/AuthContext";
 import { NotificationContext } from "../../context/NotificationContext";
+import SignInServices from "../../services/SignInServices";
+import LoadingAnim from "../../components/loader/LoadingAnim";
 
 const { Text } = Typography;
 const BookCheckout = () => {
   const [loading, setLoading] = useState();
   const [totalAmount, setTotalAmount] = useState();
   const [shippingCost, setShippingCost] = useState();
+  const [customer, setCustomer] = useState(null);
   const [form] = Form.useForm();
   const image = "src/assets/images/png/payhere_long_banner.png";
   const [selectedPaymentOption, setSelectedPaymentOption] = useState(1);
@@ -31,12 +32,12 @@ const BookCheckout = () => {
   const SHIPPING_FEE = 1000;
   const navigateTo = useNavigate();
   const { createOrder } = OrderService();
+  const { viewUser, updateUser } = SignInServices();
 
   const onChange = (e) => {
     setSelectedPaymentOption(e.target.value);
   };
   useEffect(() => {
-    console.log(orderDetails);
     const totalAmount = orderDetails
       ?.map((item) => item.price * item.qty)
       .reduce((a, b) => a + b, 0);
@@ -49,6 +50,33 @@ const BookCheckout = () => {
     setShippingCost(shippingCost);
   }, []);
 
+  useEffect(() => {
+    checkBillingAddress();
+  }, [orderDetails]);
+
+  const checkBillingAddress = async () => {
+    try {
+      setLoading(true);
+      const response = await viewUser({
+        email: user?.email,
+      });
+      if (response) {
+        if (response.responseType === "success") {
+          setCustomer(response.output.data);
+        } else if (response.responseType === "fail") {
+          openNotification("error", response?.output?.message);
+        } else if (response.responseType === "error") {
+          handleError(response.output);
+        }
+      } else {
+        openNotification("error", "Something went wrong");
+      }
+    } catch (error) {
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  };
   const onFinish = async (values) => {
     try {
       setLoading(true);
@@ -69,7 +97,6 @@ const BookCheckout = () => {
         paymentMethod: values?.paymentOption === 1 ? "Cash" : "Credit Card",
         phoneNumber: values?.phoneNumber,
       };
-      console.log(data);
       const response = await createOrder(data);
       if (response) {
         if (response.responseType === "success") {
@@ -96,7 +123,17 @@ const BookCheckout = () => {
       });
     }
   };
-
+  useEffect(() => {
+    if (customer) {
+      form.setFieldsValue({
+        phoneNumber: customer.mobile_number,
+        address: customer.shippingAddress.address,
+        cityOrSuburb: customer.shippingAddress.city,
+        postalCode: customer.shippingAddress.postalCode,
+        country: customer.shippingAddress.country,
+      });
+    }
+  }, [customer]);
   return (
     <div className="flex flex-col gap-2 p-2">
       <div className="flex w-full flex-row items-center justify-center gap-3 rounded bg-green-400 p-4">
@@ -114,417 +151,374 @@ const BookCheckout = () => {
           />
         </div>
         <div className="mt-4 flex h-full w-full justify-between py-4">
-          <Form
-            form={form}
-            className="flex w-[100%] flex-col md:flex-row"
-            layout="vertical"
-            onFinish={onFinish}
-            // initialValues={{
-            //   fullName: billingData?.userName ? billingData?.userName : "",
-            //   phoneNumber: billingData?.phoneNumber,
-            //   addressLineOne: billingData?.addressLine01
-            //     ? billingData?.addressLine01
-            //     : "",
-            //   addressLineTwo: billingData?.addressLine02
-            //     ? billingData?.addressLine02
-            //     : "",
-            //   cityOrSuburb: billingData?.city ? billingData?.city : "",
-            //   postalCode: billingData?.postalCode
-            //     ? billingData?.postalCode
-            //     : "",
-            //   stateOrProvince: billingData?.states ? billingData?.states : "",
-            //   country: billingData?.country ? billingData?.country : undefined, // Ensure this is set to undefined if not available
-            //   companyTaxID: billingData?.taxId ? billingData?.taxId : "",
-            //   businessRegistrationNumber: billingData?.brNumber
-            //     ? billingData?.brNumber
-            //     : "",
-            // }}
-            // onFieldsChange={(_, allFields) => {
-            //   if (billingData === null) {
-            //     if (
-            //       allFields[0].value === "" &&
-            //       allFields[1].value === "" &&
-            //       allFields[2].value === "" &&
-            //       allFields[3].value === "" &&
-            //       allFields[4].value === "" &&
-            //       allFields[5].value === "" &&
-            //       allFields[6].value === "" &&
-            //       allFields[7].value === ""
-            //     ) {
-            //       setButtonState(true);
-            //     } else {
-            //       setButtonState(false);
-            //     }
-            //   } else {
-            //     if (
-            //       allFields[0].value === billingData?.userName &&
-            //       allFields[1].value.countryCode +
-            //         allFields[1].value.areaCode +
-            //         allFields[1].value.phoneNumber ===
-            //         billingData?.phoneNumber &&
-            //       allFields[2].value === billingData?.addressLine01 &&
-            //       allFields[3].value === billingData?.addressLine02 &&
-            //       allFields[4].value === billingData?.city &&
-            //       allFields[5].value === billingData?.postalCode &&
-            //       allFields[6].value === billingData?.states &&
-            //       allFields[7].value === billingData?.country &&
-            //       allFields[8].value === billingData?.taxId &&
-            //       allFields[9].value === billingData?.brNumber
-            //     ) {
-            //       setButtonState(true);
-            //     } else {
-            //       setButtonState(false);
-            //     }
-            //   }
-            // }}
-          >
-            {/* Billing Details */}
-            <div className="w-full space-y-4 border-r px-6 py-4 md:w-[50%]">
-              <Form.Item
-                name="phoneNumber"
-                label="Phone Number"
-                className="w-full text-start"
-                rules={[
-                  {
-                    required: true,
-                    message: "Phone number is required!",
-                  },
-                  {
-                    pattern: /^\d{10}$/,
-                    message: "Phone number must be exactly 10 digits!",
-                  },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="Phone Number"
-                  maxLength={10}
-                  onKeyDown={(e) => {
-                    const isNumberKey = /^[0-9]$/.test(e.key);
-                    const allowedKeys = [
-                      "Backspace",
-                      "Delete",
-                      "ArrowLeft",
-                      "ArrowRight",
-                      "Tab",
-                    ];
-
-                    if (!isNumberKey && !allowedKeys.includes(e.key)) {
-                      e.preventDefault(); // Block non-numeric keys
-                    }
-                  }}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData("text/plain");
-                    const sanitizedText = pastedText.replace(
-                      /[^a-zA-Z0-9\s]/g,
-                      "",
-                    );
-                    document.execCommand(
-                      "insertText",
-                      false,
-                      sanitizedText.trim(),
-                    );
-                  }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="address"
-                label="Address"
-                className="w-full text-start"
-                rules={[
-                  {
-                    required: true,
-                    message: "Address Line 01 is required!",
-                    whitespace: true,
-                  },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="Address Line 01 "
-                  maxLength={60}
-                  onKeyDown={(e) => {
-                    const key = e.key;
-                    const { value } = e.target;
-
-                    if (key === " " && value.length === 0) {
-                      e.preventDefault();
-                    }
-
-                    if (key === " " && value.endsWith(" ")) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData("text/plain");
-                    const cleanedText = pastedText.replace(/\s\s+/g, " ");
-                    const trimmedText = cleanedText.trim();
-                    document.execCommand("insertText", false, trimmedText);
-                  }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="cityOrSuburb"
-                label="City or Suburb"
-                className="w-full text-start"
-                rules={[
-                  {
-                    required: true,
-                    message: "City or Suburb is required!",
-                    whitespace: true,
-                  },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="City or Suburb "
-                  maxLength={60}
-                  onKeyDown={(e) => {
-                    const key = e.key;
-                    const { value } = e.target;
-
-                    if (key === " " && value.length === 0) {
-                      e.preventDefault();
-                    }
-
-                    if (key === " " && value.endsWith(" ")) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData("text/plain");
-                    const cleanedText = pastedText.replace(/\s\s+/g, " ");
-                    const trimmedText = cleanedText.trim();
-                    document.execCommand("insertText", false, trimmedText);
-                  }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="postalCode"
-                label="Postal Code"
-                className="w-full text-start"
-                rules={[
-                  {
-                    required: true,
-                    message: "Postal Code is required!",
-                    whitespace: true,
-                  },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="Postal Code "
-                  maxLength={10}
-                  onKeyDown={(e) => {
-                    const key = e.key;
-
-                    // Prevent typing special characters
-                    if (/[^a-zA-Z0-9]/.test(key)) {
-                      e.preventDefault();
-                    }
-
-                    const { value } = e.target;
-                    if (key === " " && value.length === 0) {
-                      e.preventDefault();
-                    }
-                    if (key === " " && value.endsWith(" ")) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData("text/plain");
-                    const sanitizedText = pastedText.replace(
-                      /[^a-zA-Z0-9\s]/g,
-                      "",
-                    );
-                    document.execCommand(
-                      "insertText",
-                      false,
-                      sanitizedText.trim(),
-                    );
-                  }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="country"
-                label="Select Country"
-                className="w-full text-start"
-                rules={[
-                  {
-                    required: true,
-                    message: "Country is required!",
-                    whitespace: true,
-                  },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="Country "
-                  maxLength={60}
-                  onKeyDown={(e) => {
-                    const key = e.key;
-                    const { value } = e.target;
-
-                    if (key === " " && value.length === 0) {
-                      e.preventDefault();
-                    }
-
-                    if (key === " " && value.endsWith(" ")) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData("text/plain");
-                    const cleanedText = pastedText.replace(/\s\s+/g, " ");
-                    const trimmedText = cleanedText.trim();
-                    document.execCommand("insertText", false, trimmedText);
-                  }}
-                />
-              </Form.Item>
+          {loading && customer !== null ? (
+            <div className="flex h-screen w-full items-center justify-center">
+              <LoadingAnim />
             </div>
-
-            {/* Order Details */}
-            <div className="w-full px-6 py-4 md:w-[50%]">
-              <div className="flex h-full flex-col rounded-lg bg-gray-100 p-4">
-                <Text className="w-full text-center text-lg">Your Order</Text>
-                <div className="mt-2 flex w-full flex-col gap-4 bg-white p-4">
-                  <Text className="flex w-full flex-row justify-between border-b py-2">
-                    <span>PRODUCT</span>
-                    <span>SUBTOTAL</span>
-                  </Text>
-                  {orderDetails?.map((item, index) => (
-                    <Text
-                      key={index}
-                      className="flex w-full flex-row justify-between border-b text-xs"
-                    >
-                      <span className="flex flex-row gap-4">
-                        <span className="w-[50%] text-secondary">
-                          {" "}
-                          {item?.title}{" "}
-                        </span>
-                        <span className="font-semibold text-red-500"> X </span>
-                        <span className=""> {item?.qty} </span>
-                      </span>
-                      <span className="w-[50%] text-right text-primary">
-                        Rs.{item?.price * item?.qty}
-                      </span>
-                    </Text>
-                  ))}
-
-                  <Text className="flex w-full flex-row justify-between border-b text-xs">
-                    <span>Sub total</span>
-                    <span className="text-primary">Rs.{totalAmount}</span>
-                  </Text>
-                  <Text className="flex w-full flex-row justify-between border-b text-xs">
-                    <span>Shipping</span>
-                    <span className="text-primary">Rs.{SHIPPING_FEE}</span>
-                  </Text>
-                  <Text className="flex w-full flex-row justify-between border-b py-2">
-                    <span className="font-semibold text-primary">Total</span>
-                    <span className="font-semibold text-primary" font-semibold>
-                      Rs.{totalAmount + SHIPPING_FEE}
-                    </span>
-                  </Text>
-                </div>
-                <div className="mt-2 flex w-full flex-col gap-4 bg-white p-4">
-                  <Form.Item
-                    required
-                    rules={[
-                      {
-                        required: true,
-                        message: "Payment Option is required!",
-                      },
-                    ]}
-                    name="paymentOption"
-                  >
-                    <Radio.Group
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 20,
-                      }}
-                      // onChange={onChange}
-                      // value={selectedPaymentOption}
-                      className="flex flex-col gap-4"
-                      options={[
-                        {
-                          value: 1,
-                          label: "Cash on delivery",
-                        },
-                        {
-                          value: 2,
-                          label: "Direct Bank Transfer",
-                        },
-                        {
-                          value: 3,
-                          disabled: true,
-                          label: (
-                            <div className="flex flex-col gap-0">
-                              <Text>Credit card installments</Text>
-                              <Image src={payHereBanner} preview={false} />
-                            </div>
-                          ),
-                        },
-                        {
-                          value: 4,
-                          disabled: true,
-                          label: (
-                            <div className="flex flex-col gap-0">
-                              <Image
-                                style={{ width: "25%" }}
-                                src={KokoIcon}
-                                preview={false}
-                              />
-                            </div>
-                          ),
-                        },
-                      ]}
-                    />
-                  </Form.Item>
-                </div>
-                <Text className="mt-5 text-xs">
-                  Your personal data will be used to process your order, support
-                  your experience throughout this website, and for other
-                  purposes described in our privacy policy.
-                </Text>
+          ) : (
+            <Form
+              form={form}
+              className="flex w-[100%] flex-col md:flex-row"
+              layout="vertical"
+              onFinish={onFinish}
+              initialValues={{ phoneNumber: customer?.mobile_number }}
+            >
+              {console.log(customer)}
+              {/* Billing Details */}
+              <div className="w-full space-y-4 border-r px-6 py-4 md:w-[50%]">
                 <Form.Item
+                  name="phoneNumber"
+                  label="Phone Number"
+                  className="w-full text-start"
                   rules={[
                     {
                       required: true,
-                      message: "Terms and conditions is required!",
+                      message: "Phone number is required!",
+                    },
+                    {
+                      pattern: /^\d{10}$/,
+                      message: "Phone number must be exactly 10 digits!",
                     },
                   ]}
-                  valuePropName="checked"
-                  name="isAgreedTotermsAndConditions"
                 >
-                  <Checkbox onChange={onChange}>
-                    I have read and agree to the website terms and conditions *
-                  </Checkbox>
+                  <Input
+                    size="large"
+                    placeholder="Phone Number"
+                    maxLength={10}
+                    onKeyDown={(e) => {
+                      const isNumberKey = /^[0-9]$/.test(e.key);
+                      const allowedKeys = [
+                        "Backspace",
+                        "Delete",
+                        "ArrowLeft",
+                        "ArrowRight",
+                        "Tab",
+                      ];
+
+                      if (!isNumberKey && !allowedKeys.includes(e.key)) {
+                        e.preventDefault(); // Block non-numeric keys
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData.getData("text/plain");
+                      const sanitizedText = pastedText.replace(
+                        /[^a-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      document.execCommand(
+                        "insertText",
+                        false,
+                        sanitizedText.trim(),
+                      );
+                    }}
+                  />
                 </Form.Item>
-                <Form.Item className="mt-2 h-full w-full">
-                  <div className="flex h-full w-full items-center justify-start">
-                    <CustomButton
-                      type="primary"
-                      htmlType="submit"
-                      size="large"
-                      loading={loading}
-                      className="w-[25%] text-xs"
-                      buttonName="PLACE ORDER"
-                    />
-                  </div>
+
+                <Form.Item
+                  name="address"
+                  label="Address"
+                  className="w-full text-start"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Address Line 01 is required!",
+                      whitespace: true,
+                    },
+                  ]}
+                >
+                  <Input
+                    size="large"
+                    placeholder="Address Line 01 "
+                    maxLength={60}
+                    onKeyDown={(e) => {
+                      const key = e.key;
+                      const { value } = e.target;
+
+                      if (key === " " && value.length === 0) {
+                        e.preventDefault();
+                      }
+
+                      if (key === " " && value.endsWith(" ")) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData.getData("text/plain");
+                      const cleanedText = pastedText.replace(/\s\s+/g, " ");
+                      const trimmedText = cleanedText.trim();
+                      document.execCommand("insertText", false, trimmedText);
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="cityOrSuburb"
+                  label="City or Suburb"
+                  className="w-full text-start"
+                  rules={[
+                    {
+                      required: true,
+                      message: "City or Suburb is required!",
+                      whitespace: true,
+                    },
+                  ]}
+                >
+                  <Input
+                    size="large"
+                    placeholder="City or Suburb "
+                    maxLength={60}
+                    onKeyDown={(e) => {
+                      const key = e.key;
+                      const { value } = e.target;
+
+                      if (key === " " && value.length === 0) {
+                        e.preventDefault();
+                      }
+
+                      if (key === " " && value.endsWith(" ")) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData.getData("text/plain");
+                      const cleanedText = pastedText.replace(/\s\s+/g, " ");
+                      const trimmedText = cleanedText.trim();
+                      document.execCommand("insertText", false, trimmedText);
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="postalCode"
+                  label="Postal Code"
+                  className="w-full text-start"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Postal Code is required!",
+                      whitespace: true,
+                    },
+                  ]}
+                >
+                  <Input
+                    size="large"
+                    placeholder="Postal Code "
+                    maxLength={10}
+                    onKeyDown={(e) => {
+                      const key = e.key;
+
+                      // Prevent typing special characters
+                      if (/[^a-zA-Z0-9]/.test(key)) {
+                        e.preventDefault();
+                      }
+
+                      const { value } = e.target;
+                      if (key === " " && value.length === 0) {
+                        e.preventDefault();
+                      }
+                      if (key === " " && value.endsWith(" ")) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData.getData("text/plain");
+                      const sanitizedText = pastedText.replace(
+                        /[^a-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      document.execCommand(
+                        "insertText",
+                        false,
+                        sanitizedText.trim(),
+                      );
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="country"
+                  label="Select Country"
+                  className="w-full text-start"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Country is required!",
+                      whitespace: true,
+                    },
+                  ]}
+                >
+                  <Input
+                    size="large"
+                    placeholder="Country "
+                    maxLength={60}
+                    onKeyDown={(e) => {
+                      const key = e.key;
+                      const { value } = e.target;
+
+                      if (key === " " && value.length === 0) {
+                        e.preventDefault();
+                      }
+
+                      if (key === " " && value.endsWith(" ")) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData.getData("text/plain");
+                      const cleanedText = pastedText.replace(/\s\s+/g, " ");
+                      const trimmedText = cleanedText.trim();
+                      document.execCommand("insertText", false, trimmedText);
+                    }}
+                  />
                 </Form.Item>
               </div>
-            </div>
-          </Form>
+
+              {/* Order Details */}
+              <div className="w-full px-6 py-4 md:w-[50%]">
+                <div className="flex h-full flex-col rounded-lg bg-gray-100 p-4">
+                  <Text className="w-full text-center text-lg">Your Order</Text>
+                  <div className="mt-2 flex w-full flex-col gap-4 bg-white p-4">
+                    <Text className="flex w-full flex-row justify-between border-b py-2">
+                      <span>PRODUCT</span>
+                      <span>SUBTOTAL</span>
+                    </Text>
+                    {orderDetails?.map((item, index) => (
+                      <Text
+                        key={index}
+                        className="flex w-full flex-row justify-between border-b text-xs"
+                      >
+                        <span className="flex flex-row gap-4">
+                          <span className="w-[50%] text-secondary">
+                            {" "}
+                            {item?.title}{" "}
+                          </span>
+                          <span className="font-semibold text-red-500">
+                            {" "}
+                            X{" "}
+                          </span>
+                          <span className=""> {item?.qty} </span>
+                        </span>
+                        <span className="w-[50%] text-right text-primary">
+                          Rs.{item?.price * item?.qty}
+                        </span>
+                      </Text>
+                    ))}
+
+                    <Text className="flex w-full flex-row justify-between border-b text-xs">
+                      <span>Sub total</span>
+                      <span className="text-primary">Rs.{totalAmount}</span>
+                    </Text>
+                    <Text className="flex w-full flex-row justify-between border-b text-xs">
+                      <span>Shipping</span>
+                      <span className="text-primary">Rs.{SHIPPING_FEE}</span>
+                    </Text>
+                    <Text className="flex w-full flex-row justify-between border-b py-2">
+                      <span className="font-semibold text-primary">Total</span>
+                      <span
+                        className="font-semibold text-primary"
+                        font-semibold
+                      >
+                        Rs.{totalAmount + SHIPPING_FEE}
+                      </span>
+                    </Text>
+                  </div>
+                  <div className="mt-2 flex w-full flex-col gap-4 bg-white p-4">
+                    <Form.Item
+                      required
+                      rules={[
+                        {
+                          required: true,
+                          message: "Payment Option is required!",
+                        },
+                      ]}
+                      name="paymentOption"
+                    >
+                      <Radio.Group
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 20,
+                        }}
+                        // onChange={onChange}
+                        // value={selectedPaymentOption}
+                        className="flex flex-col gap-4"
+                        options={[
+                          {
+                            value: 1,
+                            label: "Cash on delivery",
+                          },
+                          {
+                            value: 2,
+                            label: "Direct Bank Transfer",
+                          },
+                          {
+                            value: 3,
+                            disabled: true,
+                            label: (
+                              <div className="flex flex-col gap-0">
+                                <Text>Credit card installments</Text>
+                                <Image src={payHereBanner} preview={false} />
+                              </div>
+                            ),
+                          },
+                          {
+                            value: 4,
+                            disabled: true,
+                            label: (
+                              <div className="flex flex-col gap-0">
+                                <Image
+                                  style={{ width: "25%" }}
+                                  src={KokoIcon}
+                                  preview={false}
+                                />
+                              </div>
+                            ),
+                          },
+                        ]}
+                      />
+                    </Form.Item>
+                  </div>
+                  <Text className="mt-5 text-xs">
+                    Your personal data will be used to process your order,
+                    support your experience throughout this website, and for
+                    other purposes described in our privacy policy.
+                  </Text>
+                  <Form.Item
+                    rules={[
+                      {
+                        required: true,
+                        message: "Terms and conditions is required!",
+                      },
+                    ]}
+                    valuePropName="checked"
+                    name="isAgreedTotermsAndConditions"
+                  >
+                    <Checkbox onChange={onChange}>
+                      I have read and agree to the website terms and conditions
+                      *
+                    </Checkbox>
+                  </Form.Item>
+                  <Form.Item className="mt-2 h-full w-full">
+                    <div className="flex h-full w-full items-center justify-start">
+                      <CustomButton
+                        type="primary"
+                        htmlType="submit"
+                        size="large"
+                        loading={loading}
+                        className="w-[25%] text-xs"
+                        buttonName="PLACE ORDER"
+                      />
+                    </div>
+                  </Form.Item>
+                </div>
+              </div>
+            </Form>
+          )}
         </div>
       </div>
 

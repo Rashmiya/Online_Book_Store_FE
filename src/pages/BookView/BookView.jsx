@@ -31,6 +31,12 @@ import {
 } from "../helpers/StorageHelper";
 import BackButtonIcon from "../../assets/images/common/BackButtonIcon";
 import BookContext from "../../context/BookContext";
+import { AuthContext } from "../../context/AuthContext";
+import OnlineBook from "./component/OnlineBook";
+import AddToWishlist from "./component/AddToWishlist";
+import { IoMdHeartEmpty } from "react-icons/io";
+import { IoHeartSharp } from "react-icons/io5";
+import WishListService from "../../services/WishListService";
 const { Text, Title } = Typography;
 const { TextArea } = Input;
 
@@ -45,23 +51,30 @@ const BookView = () => {
   const [loading, setLoading] = useState(false);
   const [allBookDetails, setAllBookDetails] = useState(false);
   const [relatedBookDetails, setRelatedBookDetails] = useState([]);
-  const [itemCount, setItemCount] = useState([]);
+  const [itemCount, setItemCount] = useState(1);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistData, setWishlistData] = useState(false);
 
   const [registerToProceed, setRegisterToProceed] = useState(false);
+  const [addToWishlist, setAddToWishlist] = useState(false);
   const [readOnlineBookModalOpen, setReadOnlineBookModalOpen] = useState(false);
   const [isMobileSize, setIsMobileSize] = useState(false);
+  const [wishListType, setWishListType] = useState(false);
   const [createReviewModalOpen, setCreateReviewModalOpen] = useState(false);
   const { setOpenCartDrawer } = useContext(HomeAndNotificationContext);
   const { openNotification, handleError } = useContext(NotificationContext);
   const { orderDetails, setOrderDetails } = useContext(BookContext);
+  const { user, isAuthChack } = useContext(AuthContext);
 
   const navigateTo = useNavigate();
   const { id } = useParams();
-  const { getBookById, getAllBooks } = BookService();
+  const { getBookById, getAllBooks, addNewReview } = BookService();
+  const { checkWishlistService } = WishListService();
 
   useEffect(() => {
     const initialFetch = async () => {
       await fetchBooks();
+      isAuthChack && (await checkWishlist());
     };
     initialFetch();
   }, []);
@@ -91,6 +104,38 @@ const BookView = () => {
       }, 1000);
     }
   };
+
+  const checkWishlist = async () => {
+    setLoading(true);
+    const data = { bookId: id, userId: user?.id };
+    const response = await checkWishlistService(data);
+    try {
+      if (response) {
+        if (response.responseType === "success") {
+          if (response.output.data) {
+            setIsWishlisted(true);
+            setWishlistData(response.output.data);
+          } else {
+            setIsWishlisted(false);
+            setWishlistData(null);
+          }
+        } else if (response.responseType === "fail") {
+          openNotification("error", response?.output?.message);
+        } else if (response.responseType === "error") {
+          handleError(response.output);
+        }
+      } else {
+        openNotification("error", "Something went wrong");
+      }
+    } catch (error) {
+      openNotification("error", "Something went wrong");
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+    }
+  };
+
   const fetchAllBooks = async (data) => {
     const response = await getAllBooks({ types: data });
     try {
@@ -164,6 +209,38 @@ const BookView = () => {
   const CreateReviewBody = () => {
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState(null);
+    const [reviewLoading, setReviewLoading] = useState(false);
+
+    const submitReview = async () => {
+      setReviewLoading(true);
+      const data = {
+        bookId: id,
+        rating: rating,
+        comment: review.trim(),
+        userName: user?.username,
+      };
+
+      const response = await addNewReview(data);
+      try {
+        if (response) {
+          if (response.responseType === "success") {
+            fetchBooks();
+            setCreateReviewModalOpen(false);
+          } else if (response.responseType === "fail") {
+            openNotification("error", response?.output?.message);
+          } else if (response.responseType === "error") {
+            handleError(response.output);
+          }
+        } else {
+          openNotification("error", "Something went wrong");
+        }
+      } catch (error) {
+        openNotification("error", "Something went wrong");
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+
     return (
       <div className="mt-4 flex w-full flex-col items-start justify-start gap-4">
         <Rate value={rating} onChange={(e) => setRating(e)} />
@@ -181,22 +258,20 @@ const BookView = () => {
           <CustomButton
             buttonName="Cancel"
             onClick={() => setCreateReviewModalOpen(false)}
+            disabled={reviewLoading}
           />
           <CustomButton
             type="primary"
             buttonName="Submit"
+            loading={reviewLoading}
+            disabled={!review}
             onClick={() => {
-              console.log(rating, review);
-              setCreateReviewModalOpen(false);
+              submitReview();
             }}
           />
         </div>
       </div>
     );
-  };
-
-  const OnlineBook = () => {
-    return <div className="h-[500px] w-full bg-red-500"></div>;
   };
 
   const addToCart = () => {
@@ -232,7 +307,7 @@ const BookView = () => {
   };
   const checkOutBook = () => {
     const userDetails = getLocalStoragedata("userDetails");
-    console.log(userDetails);
+
     const orderDetails = [
       {
         bookId: id,
@@ -258,6 +333,8 @@ const BookView = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const pdfUrl = allBookDetails?.pdf_file;
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -449,9 +526,31 @@ const BookView = () => {
                       }}
                       disabled={allBookDetails?.qty === 0}
                       changeOnWheel
-                      className="w-full"
+                      className=""
                     />
 
+                    {isAuthChack &&
+                      (isWishlisted ? (
+                        <IoHeartSharp
+                          className="cursor-pointer"
+                          color="green"
+                          size={40}
+                          onClick={() => {
+                            setWishListType("edit");
+                            setAddToWishlist(true);
+                          }}
+                        />
+                      ) : (
+                        <IoMdHeartEmpty
+                          className="cursor-pointer"
+                          color="green"
+                          size={40}
+                          onClick={() => {
+                            setWishListType("create");
+                            setAddToWishlist(true);
+                          }}
+                        />
+                      ))}
                     <CustomButton
                       type="primary"
                       size="medium"
@@ -551,21 +650,27 @@ const BookView = () => {
             ) : (
               <div className="flex w-full flex-col items-center justify-center gap-2">
                 <div className="w-[80%] rounded pb-4">
-                  <CustomButton
-                    buttonName="Write a review"
-                    onClick={() => setCreateReviewModalOpen(true)}
-                  />
+                  {user && (
+                    <CustomButton
+                      buttonName="Write a review"
+                      onClick={() => setCreateReviewModalOpen(true)}
+                    />
+                  )}
                 </div>
-                {reviews?.map((review, index) => (
-                  <div key={index} className="w-[80%] rounded border p-2">
-                    <Rate defaultValue={review?.rating} disabled />
-                    <div className="flex flex-row gap-2">
-                      <UserIcon />
-                      <Text>{review?.userName}</Text>
+                {allBookDetails?.reviews?.length === 0 ? (
+                  <NoDataAnim message={"No reviews found."} />
+                ) : (
+                  allBookDetails?.reviews?.map((review, index) => (
+                    <div key={index} className="w-[80%] rounded border p-2">
+                      <Rate defaultValue={review?.rating} disabled />
+                      <div className="flex flex-row gap-2">
+                        <UserIcon />
+                        <Text>{review?.userName}</Text>
+                      </div>
+                      <Text className="text-xs">{review?.comment}</Text>
                     </div>
-                    <Text className="text-xs">{review?.content}</Text>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             )}
           </div>
@@ -590,13 +695,13 @@ const BookView = () => {
       {/* online read book modal */}
       <ActionDialog
         size={900}
-        title={bookDetails?.title}
+        title={allBookDetails?.title}
         modelOpen={readOnlineBookModalOpen}
         handleCancel={() => {
           setReadOnlineBookModalOpen(false);
         }}
       >
-        <OnlineBook />
+        <OnlineBook pdfUrl={pdfUrl} />
       </ActionDialog>
 
       {/* Sign in/Sign up warning modal */}
@@ -609,6 +714,26 @@ const BookView = () => {
         }}
       >
         <RegisterWarning />
+      </ActionDialog>
+
+      {/* Add to wishlist modal */}
+      <ActionDialog
+        size={400}
+        title="Add to wishlist"
+        modelOpen={addToWishlist}
+        handleCancel={() => {
+          setAddToWishlist(false);
+        }}
+      >
+        <AddToWishlist
+          book={allBookDetails}
+          type={wishListType}
+          data={wishlistData}
+          handleCancel={async () => {
+            await checkWishlist();
+            setAddToWishlist(false);
+          }}
+        />
       </ActionDialog>
     </div>
   );

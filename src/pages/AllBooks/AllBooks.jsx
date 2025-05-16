@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import FooterSection from "../../components/Footer/FooterSection";
 import {
+  Button,
   Collapse,
   ConfigProvider,
   Flex,
@@ -13,6 +14,7 @@ import {
   Switch,
   Tag,
   Typography,
+  Upload,
 } from "antd";
 import { allBooks } from "../../utils/constent/BookDetails";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +25,7 @@ import SearchOutline from "../../assets/images/common/SearchOutline";
 import LoadingAnim from "../../components/loader/LoadingAnim";
 import SkeletonComponent from "../../components/Skeleton/SkeletonComponent";
 import NoDataAnim from "../../components/nodataAnim/NoDataAnim";
+import { UploadOutlined } from "@ant-design/icons";
 const { Text } = Typography;
 
 const AllBooks = () => {
@@ -35,6 +38,7 @@ const AllBooks = () => {
   const [searchingValue, setSearchingValue] = useState("");
   const [allBookDetails, setAllBookDetails] = useState(false);
   const [searchedFilters, setSearchedFilters] = useState([]);
+
   const [filterdPrice, setFilterdPrice] = useState({
     min: 1000,
     max: 15000,
@@ -45,7 +49,7 @@ const AllBooks = () => {
     perPage: 10,
   });
 
-  const { getAllBooks } = BookService();
+  const { getAllBooks, searchByImage } = BookService();
 
   useEffect(() => {
     fetchBooks();
@@ -251,12 +255,49 @@ const AllBooks = () => {
       updateFilters({ searchTerm: e.target.value?.trim() });
     }, 1000);
   };
+
+  const handleImageUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("searching_image", file);
+
+    try {
+      const response = await searchByImage(formData);
+
+      if (response) {
+        if (response.responseType === "success") {
+          console.log(response);
+        } else if (response.responseType === "fail") {
+          openNotification("error", response?.output?.message);
+        } else if (response.responseType === "error") {
+          handleError(response.output);
+        }
+      } else {
+        openNotification("error", "Something went wrong");
+      }
+    } catch (error) {
+      openNotification("error", "Something went wrong");
+    }
+
+    return false;
+  };
+
+  <Upload
+    beforeUpload={handleImageUpload}
+    showUploadList={false}
+    accept="image/*"
+  >
+    <Button
+      icon={<UploadOutlined />}
+      className="flex items-center justify-center rounded-2xl"
+    ></Button>
+  </Upload>;
+
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="relative flex h-full w-[100%] flex-col items-center justify-center">
         <div className="flex h-[10%] w-full flex-col items-center justify-center gap-4 py-2 sm:flex-row">
           <Text className="px-2 text-xl font-normal">All Books</Text>
-          <div className="f">
+          <div className="flex flex-row gap-3">
             <Input
               className="w-[300px] rounded-2xl"
               size="default"
@@ -266,6 +307,17 @@ const AllBooks = () => {
               suffix={<SearchOutline className="flex w-[20px]" />}
               onChange={handleSearchBook}
             />
+            {/* Image Upload Button */}
+            <Upload
+              beforeUpload={handleImageUpload}
+              showUploadList={false}
+              accept="image/*"
+            >
+              <Button
+                icon={<UploadOutlined />}
+                className="flex items-center justify-center rounded-2xl"
+              ></Button>
+            </Upload>
           </div>
         </div>
         <div className="flex h-[90vh] w-full flex-row items-center justify-center">

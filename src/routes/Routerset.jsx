@@ -1,19 +1,20 @@
-import React, { useContext } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import Dashboard from '../pages/Dashboard/Dashboard';
-import SignInView from '../pages/OnBoarding/Sign in/SignInView';
-import DashboardLayout from '../pages/Layout/DashboardLayout';
-import SignUpView from '../pages/OnBoarding/Sign up/SignUpView';
-import OnBoardingProcess from '../pages/OnBoarding/OnBoardingProcess';
-import AllBooks from '../pages/AllBooks/AllBooks';
-import BookView from '../pages/BookView/BookView';
-import HelpCenter from '../pages/LandingPages/HelpCenter';
-import BookCheckout from '../pages/BookCheckout/BookCheckout';
-import AboutUs from '../pages/LandingPages/AboutUs';
-import PrivacyPolicy from '../pages/LandingPages/PrivacyPolicy';
-import Contact from '../pages/LandingPages/Contact';
-import OrderSuccess from '../pages/OrderSuccess/OrderSuccess';
+import React, { useContext } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import Dashboard from "../pages/Dashboard/Dashboard";
+import SignInView from "../pages/OnBoarding/Sign in/SignInView";
+import DashboardLayout from "../pages/Layout/DashboardLayout";
+import SignUpView from "../pages/OnBoarding/Sign up/SignUpView";
+import OnBoardingProcess from "../pages/OnBoarding/OnBoardingProcess";
+import AllBooks from "../pages/AllBooks/AllBooks";
+import BookView from "../pages/BookView/BookView";
+import HelpCenter from "../pages/LandingPages/HelpCenter";
+import BookCheckout from "../pages/BookCheckout/BookCheckout";
+import AboutUs from "../pages/LandingPages/AboutUs";
+import PrivacyPolicy from "../pages/LandingPages/PrivacyPolicy";
+import Contact from "../pages/LandingPages/Contact";
+import OrderSuccess from "../pages/OrderSuccess/OrderSuccess";
+import MyProfile from "../pages/MyProfile/MyProfile";
 
 const Routerset = () => {
   const { token } = useContext(AuthContext);
@@ -47,6 +48,11 @@ const Routerset = () => {
             path="order-success/:id"
             element={<PrivateRoute element={<OrderSuccess />} />}
           />
+
+          <Route
+            path="my-profile"
+            element={<PrivateRoute element={<MyProfile />} />}
+          />
         </Route>
       ) : (
         <Route path="*" element={<SignInView />} />
@@ -57,27 +63,8 @@ const Routerset = () => {
 
 export default Routerset;
 
-const PublicRoutes = ({ element, allow }) => {
-  const { block, user } = useContext(AuthContext);
-
-  if (block) {
-    if (allow) {
-      if (user?.role === 3) {
-        return element;
-      } else {
-        // return <Navigate to="/unauthorized-error" replace />;
-        return element;
-      }
-    } else {
-      return <Navigate to="/subscription-expired" replace />;
-    }
-  } else {
-    return element;
-  }
-};
-
 const PrivateRoute = ({ element }) => {
-  const { isAuthChack, setIsAuthChack } = useContext(AuthContext);
+  const { isAuthChack } = useContext(AuthContext);
 
   if (isAuthChack) {
     return element;

@@ -118,6 +118,31 @@ const BookService = () => {
     }
   };
 
+  // Add a review to a book
+  const addNewReview = async (data) => {
+    try {
+      const response = await fetchAction({
+        query: "/book/review",
+        body: data,
+      });
+      return handleResponse(response);
+    } catch (error) {
+      return { responseType: "error", output: error };
+    }
+  };
+
+  const searchByImage = async (data) => {
+    try {
+      const response = await fetchActionForm({
+        query: "/book/search-by-image",
+        method: "post",
+        body: data,
+      });
+      return handleResponse(response);
+    } catch (error) {
+      return { responseType: "error", output: error };
+    }
+  };
   return {
     createBook,
     getAllBooks,
@@ -125,6 +150,8 @@ const BookService = () => {
     updateBook,
     deleteBook,
     searchBooks,
+    addNewReview,
+    searchByImage,
   };
 };
 

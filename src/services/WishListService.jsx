@@ -1,7 +1,7 @@
 import React from "react";
 import useFetch from "../hooks/useFetch";
 
-const SignInServices = () => {
+const WishListService = () => {
   const { fetchAction } = useFetch();
 
   const handleResponse = (response) => {
@@ -12,10 +12,10 @@ const SignInServices = () => {
     }
   };
 
-  const loginUser = async (data) => {
+  const saveWishList = async (data) => {
     try {
       const response = await fetchAction({
-        query: "/customer/signin",
+        query: "/wishlist/create",
         body: data,
       });
       return handleResponse(response);
@@ -24,37 +24,14 @@ const SignInServices = () => {
     }
   };
 
-  const signUpUser = async (data) => {
+  const checkWishlistService = async (data) => {
     try {
       const response = await fetchAction({
-        query: "/customer/signup",
-        body: data,
-      });
-      return handleResponse(response);
-    } catch (error) {
-      return { responseType: "error", output: error };
-    }
-  };
-
-  const logOutUser = async (data) => {
-    try {
-      const response = await fetchAction({
-        query: "/customer/logout",
-        method: "get",
-      });
-      return handleResponse(response);
-    } catch (error) {
-      return { responseType: "error", output: error };
-    }
-  };
-
-  const viewUser = async (data) => {
-    try {
-      const response = await fetchAction({
-        query: "/customer/details",
+        query: "/wishlist/check",
         method: "get",
         params: {
-          email: data?.email || "",
+          bookId: data.bookId || "",
+          userId: data.userId || "",
         },
       });
       return handleResponse(response);
@@ -63,19 +40,19 @@ const SignInServices = () => {
     }
   };
 
-  const updateUser = async (data) => {
+  const updateWishList = async (data) => {
     try {
       const response = await fetchAction({
-        query: "/customer/update",
-        body: data,
+        query: "/wishlist/update",
         method: "put",
+        body: data,
       });
       return handleResponse(response);
     } catch (error) {
       return { responseType: "error", output: error };
     }
   };
-  return { loginUser, signUpUser, logOutUser, viewUser, updateUser };
+  return { saveWishList, checkWishlistService, updateWishList };
 };
 
-export default SignInServices;
+export default WishListService;
